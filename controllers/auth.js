@@ -1,10 +1,10 @@
+const User = require('../models/user');
+
 exports.getLogin = (req, res, next) => {
-  const isLoggedIn =
-    req.get('Cookie').split(';')[0].trim().split('=')[1] === 'true';
   res.render('auth/login', {
-    pageTitle: 'Login',
     path: '/login',
-    isAuthenticated: isLoggedIn,
+    pageTitle: 'Login',
+    isAuthenticated: false,
   });
 };
 
@@ -15,8 +15,13 @@ exports.postLogin = (req, res, next) => {
   // res.setHeader('Set-Cookie', 'loggedIn=true');
   // Session is server side and cookie is client side
 
-  req.session.isLoggedIn = true;
-  res.redirect('/');
+  User.findById('64a582ca675f2520ed4f9e4b')
+    .then((user) => {
+      req.session.isLoggedIn = true;
+      req.session.user = user;
+      res.redirect('/');
+    })
+    .catch((err) => console.log(err));
 };
 
 exports.postLogout = (req, res, next) => {
