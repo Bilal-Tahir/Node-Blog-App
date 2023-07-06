@@ -3,24 +3,43 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const shopRouter = require('./router/shop');
 const adminRouter = require('./router/admin');
+const authRouter = require('./router/auth');
 const errorController = require('./controllers/error');
 
 //Models
 const User = require('./models/user');
 
+const MongoDB_URI =
+  'mongodb+srv://bilaltahir:71QqCssl4FPqAhl6@cluster0.mvgvyvm.mongodb.net/?retryWrites=true&w=majority';
+
 // Used for Mongo Db Driver
 // const mongoConnect = require('./util/database').mongoConnect;
 
 const app = express();
+const store = new MongoDBStore({
+  uri: MongoDB_URI,
+  collection: 'sessions',
+});
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public'))); //for css files
+
+app.use(
+  session({
+    secret: 'my secret',
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+  })
+);
 
 app.use((req, res, next) => {
   User.findById('64a582ca675f2520ed4f9e4b')
@@ -33,6 +52,7 @@ app.use((req, res, next) => {
 
 app.use('/admin', adminRouter);
 app.use(shopRouter);
+app.use(authRouter);
 
 app.use(errorController.get404Error);
 
@@ -43,9 +63,7 @@ app.use(errorController.get404Error);
 
 //Connected through mongoose
 mongoose
-  .connect(
-    'mongodb+srv://bilaltahir:71QqCssl4FPqAhl6@cluster0.mvgvyvm.mongodb.net/?retryWrites=true&w=majority'
-  )
+  .connect(MongoDB_URI)
   .then((result) => {
     User.findOne().then((user) => {
       if (!user) {
